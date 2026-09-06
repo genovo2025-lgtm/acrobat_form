@@ -23,11 +23,11 @@ jobs:
         with:
           node-version: 18
 
-      - name: Configurar Java 17
+      - name: Configurar Java 11 (Estabilidad garantizada)
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '11'
 
       - name: Localizar y preparar archivos web en www
         run: |
@@ -43,12 +43,12 @@ jobs:
             echo '<!DOCTYPE html><html><head><title>AcroForm</title></head><body><h1>AcroForm Sealer</h1></body></html>' > www/index.html
           fi
 
-      - name: Instalar Capacitor
+      - name: Instalar Capacitor (Versión Estable)
         run: |
           if [ ! -f package.json ]; then
             npm init -y
           fi
-          npm install --yes @capacitor/core @capacitor/cli @capacitor/android
+          npm install --yes @capacitor/core@5 @capacitor/cli@5 @capacitor/android@5
 
       - name: Crear capacitor.config.json
         run: |
@@ -63,7 +63,7 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
+          ./gradlew assembleDebug --no-daemon
 
       - name: Subir el APK generado
         uses: actions/upload-artifact@v4
