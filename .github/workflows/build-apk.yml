@@ -23,11 +23,11 @@ jobs:
         with:
           node-version: 18
 
-      - name: Configurar Java 11 (Estabilidad garantizada)
+      - name: Configurar Java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '11'
+          java-version: '17'
 
       - name: Localizar y preparar archivos web en www
         run: |
@@ -43,7 +43,7 @@ jobs:
             echo '<!DOCTYPE html><html><head><title>AcroForm</title></head><body><h1>AcroForm Sealer</h1></body></html>' > www/index.html
           fi
 
-      - name: Instalar Capacitor (Versión Estable)
+      - name: Instalar Capacitor 5
         run: |
           if [ ! -f package.json ]; then
             npm init -y
@@ -59,11 +59,12 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      - name: Compilar APK
+      - name: Limpiar cachés corruptas de Gradle y compilar
         run: |
+          rm -rf ~/.gradle/caches/
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          ./gradlew --refresh-dependencies assembleDebug --no-daemon
 
       - name: Subir el APK generado
         uses: actions/upload-artifact@v4
