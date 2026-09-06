@@ -27,7 +27,11 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '21'
+          java-version: '17'
+
+      - name: Aceptar licencias de Android SDK
+        run: |
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Localizar y preparar archivos web en www
         run: |
@@ -54,16 +58,20 @@ jobs:
         run: |
           echo '{"appId":"com.acroform.sealer","appName":"AcroForm Sealer","webDir":"www"}' > capacitor.config.json
 
-      - name: Generar y sincronizar proyecto Android
+      - name: Generar proyecto Android
         run: |
           npx cap add android || true
           npx cap sync android
 
-      - name: Compilar APK en la nube
+      - name: Otorgar permisos a Gradlew
         run: |
-          cd android
-          chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon
+          chmod +x android/gradlew
+
+      - name: Compilar APK con Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          build-root-directory: android
+          arguments: assembleDebug --stacktrace
 
       - name: Subir el APK generado
         uses: actions/upload-artifact@v4
