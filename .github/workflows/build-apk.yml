@@ -23,15 +23,11 @@ jobs:
         with:
           node-version: 18
 
-      - name: Configurar Java
+      - name: Configurar Java 17
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
           java-version: '17'
-
-      - name: Aceptar licencias de Android SDK
-        run: |
-          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
       - name: Localizar y preparar archivos web en www
         run: |
@@ -63,15 +59,11 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      - name: Otorgar permisos a Gradlew
+      - name: Compilar APK
         run: |
-          chmod +x android/gradlew
-
-      - name: Compilar APK con Gradle
-        uses: gradle/gradle-build-action@v2
-        with:
-          build-root-directory: android
-          arguments: assembleDebug --stacktrace
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon -Dorg.gradle.jvmargs="-Xmx2048m -XX:MaxMetaspaceSize=512m"
 
       - name: Subir el APK generado
         uses: actions/upload-artifact@v4
