@@ -7,6 +7,9 @@ on:
       - master
   workflow_dispatch:
 
+env:
+  CI: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,29 +29,27 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      - name: Mover archivos a la raíz si están en subcarpeta
-        run: |
-          if [ -d "acrobat_form_sealer" ]; then
-            echo "Moviendo contenido de acrobat_form_sealer a la raíz..."
-            cp -r acrobat_form_sealer/* .
-          fi
-
-      - name: Preparar directorio web (www)
+      - name: Localizar y preparar archivos web en www
         run: |
           mkdir -p www
-          if [ -f package.json ]; then
-            npm install
-            npm run build --if-present
+          # Buscar dónde está index.html dentro del repositorio
+          INDEX_PATH=$(find . -maxdepth 3 -name "index.html" -not -path "*/node_modules/*" -not -path "*/www/*" | head -n 1)
+          
+          if [ -n "$INDEX_PATH" ]; then
+            DIR_NAME=$(dirname "$INDEX_PATH")
+            echo "Archivos web encontrados en: $DIR_NAME"
+            cp -r $DIR_NAME/* www/
+          else
+            echo "No se encontró index.html, creando un archivo base..."
+            echo '<!DOCTYPE html><html><head><title>AcroForm</title></head><body><h1>AcroForm Sealer</h1></body></html>' > www/index.html
           fi
-          # Copiar todos los archivos estáticos a www excluyendo carpetas del sistema
-          rsync -av --exclude='www' --exclude='android' --exclude='node_modules' --exclude='.git' --exclude='.github' . www/ || cp -r index.html js css assets www/ 2>/dev/null || true
 
-      - name: Preparar proyecto e instalar Capacitor
+      - name: Instalar Capacitor
         run: |
           if [ ! -f package.json ]; then
             npm init -y
           fi
-          npm install @capacitor/core @capacitor/cli @capacitor/android
+          npm install --yes @capacitor/core @capacitor/cli @capacitor/android
 
       - name: Crear capacitor.config.json
         run: |
@@ -59,6 +60,10 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
+      - name: Verificar sincronización correcta
+        run: |
+          test -f android/app/src/main/assets/capacitor.plugins.json || (echo "Error en la generación de assets" && exit 1)
+
       - name: Compilar APK en la nube
         run: |
           cd android
@@ -67,6 +72,9 @@ jobs:
 
       - name: Subir el APK generado
         uses: actions/upload-artifact@v4
+        with:
+          name: AcroFormSealer-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
         with:
           name: AcroFormSealer-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
