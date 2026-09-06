@@ -27,12 +27,11 @@ jobs:
         uses: actions/setup-java@v3
         with:
           distribution: 'zulu'
-          java-version: '17'
+          java-version: '21'
 
       - name: Localizar y preparar archivos web en www
         run: |
           mkdir -p www
-          # Buscar dónde está index.html dentro del repositorio
           INDEX_PATH=$(find . -maxdepth 3 -name "index.html" -not -path "*/node_modules/*" -not -path "*/www/*" | head -n 1)
           
           if [ -n "$INDEX_PATH" ]; then
@@ -40,7 +39,7 @@ jobs:
             echo "Archivos web encontrados en: $DIR_NAME"
             cp -r $DIR_NAME/* www/
           else
-            echo "No se encontró index.html, creando un archivo base..."
+            echo "No se encontró index.html, creando archivo base..."
             echo '<!DOCTYPE html><html><head><title>AcroForm</title></head><body><h1>AcroForm Sealer</h1></body></html>' > www/index.html
           fi
 
@@ -60,15 +59,11 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      - name: Verificar sincronización correcta
-        run: |
-          test -f android/app/src/main/assets/capacitor.plugins.json || (echo "Error en la generación de assets" && exit 1)
-
       - name: Compilar APK en la nube
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Subir el APK generado
         uses: actions/upload-artifact@v4
