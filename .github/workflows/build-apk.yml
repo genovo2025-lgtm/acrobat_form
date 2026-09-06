@@ -26,6 +26,13 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Mover archivos a la raíz si están en subcarpeta
+        run: |
+          if [ -d "acrobat_form_sealer" ]; then
+            echo "Moviendo contenido de acrobat_form_sealer a la raíz..."
+            cp -r acrobat_form_sealer/* .
+          fi
+
       - name: Preparar proyecto e instalar Capacitor
         run: |
           if [ ! -f package.json ]; then
@@ -33,11 +40,9 @@ jobs:
           fi
           npm install @capacitor/core @capacitor/cli @capacitor/android
 
-      - name: Crear capacitor.config.json si no existe
+      - name: Crear capacitor.config.json
         run: |
-          if [ ! -f capacitor.config.json ]; then
-            echo '{"appId":"com.acroform.sealer","appName":"AcroForm Sealer","webDir":".","bundledWebRuntime":false}' > capacitor.config.json
-          fi
+          echo '{"appId":"com.acroform.sealer","appName":"AcroForm Sealer","webDir":".","bundledWebRuntime":false}' > capacitor.config.json
 
       - name: Generar y sincronizar proyecto Android
         run: |
